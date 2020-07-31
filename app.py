@@ -106,24 +106,36 @@ def venues():
   # Set current time
   current_time = datetime.utcnow()
   
-  # Get single instance of a city and state
+  # Get distinct record for each city/state
   locations = db.session.query(Venue).distinct(Venue.city, Venue.state)
 
-  # Get shows based on the venue ID
-  # shows = Venue.query.join(Show, Show.venue_id == Venue.id).filter(Show.start_time>current_time)
-
+  # Iterate through the results from previous query
   for location in locations:
-    # Join venues (filtered by city) and shows to get all
-    locations = Venue.query.filter_by(city=location.city).outerjoin(Show, Show.venue_id == location.id).all()
-    # shows = Venue.query.join(Show, Show.venue_id == Venue.id).filter(Show.start_time>current_time).count()
+    # Join venues (filtered by city) and shows to get all records, regardless of whether a venue has any shows
+    locations = Venue.query.filter_by(city=location.city).outerjoin(Show, Venue.id == Show.venue_id).all()
 
+    # Create an empty array for storing venue data
     venues = []
+
+    # Iterate through the results from previous query
     for venue in locations:
+
+      # Store list of shows in a variable
+      shows = venue.shows
+
+      # Create an empty array for storing filtered show data
+      upcoming_shows = []
+
+      # Iterate through shows and store filtered data in upcoming_shows
+      for show in shows:
+        if show.start_time > current_time:
+          upcoming_shows.append(show)
+      
       # Add venue data to venues array
       venues.append({
         'id': venue.id,
         'name': venue.name,
-        'num_upcoming_shows': len(venue.shows)
+        'num_upcoming_shows': len(upcoming_shows)
       })
 
     data.append({
