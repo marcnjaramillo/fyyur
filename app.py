@@ -49,6 +49,10 @@ class Venue(db.Model):
     website = db.Column(db.String(120))
     seeking_talent = db.Column(db.Boolean)
     seeking_description = db.Column(db.String())
+    created_at = db.Column(
+        db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, nullable=False)
 
 
 class Artist(db.Model):
@@ -65,6 +69,10 @@ class Artist(db.Model):
     website = db.Column(db.String(120))
     seeking_venue = db.Column(db.Boolean)
     seeking_description = db.Column(db.String())
+    created_at = db.Column(
+        db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, nullable=False)
 
 
 class Show(db.Model):
@@ -112,7 +120,7 @@ def index():
 def venues():
     data = []
 
-    locations = db.session.query(Venue).distinct(Venue.city, Venue.state)
+    locations = Venue.query.distinct(Venue.city, Venue.state)
 
     for location in locations:
         locations = Venue.query.filter_by(city=location.city).outerjoin(
@@ -354,9 +362,7 @@ def delete_venue(venue_id):
     finally:
         db.session.close()
 
-    # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
-    # clicking that button delete it from the db then redirect the user to the homepage
-    return None
+    return render_template('pages/home.html')
 
 #  ----------------------------------------------------------------
 #  Artists
@@ -574,12 +580,20 @@ def edit_artist_submission(artist_id):
 
 @app.route('/artists/<artist_id>', methods=['DELETE'])
 def delete_artist(artist_id):
-    # TODO: Complete this endpoint for taking a artist_id, and using
-    # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
+    error = False
+    try:
+        artist = Artist.query.get(artist_id)
+        db.session.delete(artist)
+        db.session.commit()
+        flash('Artist successfully deleted.')
+    except Exception as e:
+        print(e)
+        db.session.rollback()
+        flash('Artist could not be deleted.')
+    finally:
+        db.session.close()
 
-    # BONUS CHALLENGE: Implement a button to delete an Artist on an Artist Page, have it so that
-    # clicking that button delete it from the db then redirect the user to the homepage
-    return None
+    return render_template('pages/home.html')
 
 #  ----------------------------------------------------------------
 #  Shows
